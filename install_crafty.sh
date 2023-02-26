@@ -31,7 +31,7 @@ elif [ "${fail}" -eq 0 ];then
             sudo dnf install python3-pip -y
         fi
         pip3 install distro
-        python3 install_crafty.py
+        python3 install_crafty.py $1 $2
     fi
 else
     echo "Something really bad broke. (fail value is ${fail}). Please report this error to the developer"
