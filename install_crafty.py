@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+import argparse
 import distro as pydistro
 import shutil
 import platform
@@ -16,9 +17,15 @@ from app.pretty import pretty
 with open("config.json", "r") as fh:
     defaults = json.load(fh)
 
-if len(sys.argv) > 1:
-    if sys.argv[1] == "-d":
-        defaults["debug_mode"] = True
+    parser = argparse.ArgumentParser("Crafty Controller - A Server Management System")
+
+    parser.add_argument(
+        "-d", "--debug", action="store_true", help="Sets logging level to debug."
+    )
+
+    args = parser.parse_args()
+    if args.debug:
+        defaults["debug_mode"] = args.debug
         pretty.info("Debug mode turned on")
 
 
