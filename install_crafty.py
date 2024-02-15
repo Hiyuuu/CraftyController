@@ -625,10 +625,14 @@ if __name__ == "__main__":
     make_startup_script()
     make_update_script()
 
-    service_answer = helper.get_user_valid_input(
-        "Would you like to make a service file for Crafty?", ["y", "n"]
-    )
-    if service_answer == "y":
+    if not defaults["unattended"]:
+        service_answer = helper.get_user_valid_input(
+            "Would you like to make a service file for Crafty?", ["y", "n"]
+        )
+        if service_answer == "y":
+            make_service_script()
+            make_service_file()
+    else:
         make_service_script()
         make_service_file()
 
