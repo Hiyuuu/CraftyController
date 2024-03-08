@@ -8,4 +8,4 @@ echo "deb [signed-by=/usr/share/keyrings/adoptium.asc] https://packages.adoptium
 sudo apt update -y
 sudo apt install temurin-8-jdk -y
 
-sudo useradd crafty -s /bin/bash
+sudo useradd crafty -s /usr/sbin/nologin
