@@ -2,7 +2,6 @@
     "arch": [],
     "archarm": [],
     "centos": [
-        "8",
         "9"
     ],
     "debian": [
