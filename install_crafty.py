@@ -344,6 +344,7 @@ def make_service_script():
 
     subprocess.check_output("chmod +x *.sh", shell=True)
 
+
 # Creates the stop service.sh
 def make_service_stop_script():
     os.chdir(install_dir)
@@ -351,12 +352,15 @@ def make_service_stop_script():
 
     txt = "#!/bin/bash\n"
     # get pid from session.lock and send SIGINT to Crafty
-    txt += "kill -2 $({}/crafty-4/app/config/session.lock | grep -Eo '\"pid\": [0-9]+' | cut -d' ' -f2)\n".format(install_dir)
+    txt += "kill -2 $({}/crafty-4/app/config/session.lock | grep -Eo '\"pid\": [0-9]+' | cut -d' ' -f2)\n".format(
+        install_dir
+    )
     with open("stop_crafty_service.sh", "w") as fh:
         fh.write(txt)
         fh.close()
 
     subprocess.check_output("chmod +x *.sh", shell=True)
+
 
 def make_service_file():
     os.chdir(install_dir)
@@ -647,6 +651,7 @@ if __name__ == "__main__":
         )
         if service_answer == "y":
             make_service_script()
+            make_service_stop_script()
             make_service_file()
     else:
         make_service_script()
@@ -654,9 +659,7 @@ if __name__ == "__main__":
         make_service_file()
 
     # fixing permission issues
-    cmd = "sudo chown crafty:crafty -R {dir}".format(
-        dir=install_dir
-    )
+    cmd = "sudo chown crafty:crafty -R {dir}".format(dir=install_dir)
     subprocess.check_output(cmd, shell=True)
 
     time.sleep(1)
