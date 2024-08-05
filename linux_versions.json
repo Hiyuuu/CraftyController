@@ -1,35 +1,57 @@
 {
-    "arch": [],
-    "archarm": [],
-    "centos": [
-        "9"
-    ],
-    "debian": [
-        "11",
-        "12"
-    ],
-    "fedora": [
-        "39",
-        "40"
-    ],
-    "linuxmint": [
-        "21.2",
-        "21.3"
-    ],
-    "manjaro": [],
-    "pop": [
-        "22.04"
-    ],
-    "raspbian": [
-        "11",
-        "12"
-    ],
-    "rocky": [
-        "9.4"
-    ],
-    "ubuntu": [
-        "22.04",
-        "23.10",
-        "24.04"
-    ]
+    "arch": {
+        "versions": []
+    },
+    "archarm": {
+        "versions": []
+    },
+    "centos": {
+        "versions": [
+            "9"
+        ]
+    },
+    "debian": {
+        "versions": [
+            "11",
+            "12"
+        ]
+    },
+    "fedora": {
+        "versions": [
+            "39",
+            "40"
+        ]
+    },
+    "linuxmint": {
+        "versions": [
+            "21.2",
+            "21.3"
+        ]
+    },
+    "manjaro": {
+        "versions": []
+    },
+    "pop": {
+        "versions": [
+            "22.04"
+        ]
+    },
+    "raspbian": {
+        "versions": [
+            "11",
+            "12"
+        ]
+    },
+    "rocky": {
+        "versions": [
+            "9.4"
+        ]
+    },
+    "ubuntu": {
+        "versions": [
+            "22.04",
+            "23.10",
+            "24.04"
+        ]
+    }
 }
