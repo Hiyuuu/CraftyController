@@ -345,23 +345,6 @@ def make_service_script():
     subprocess.check_output("chmod +x *.sh", shell=True)
 
 
-# Creates the stop service.sh
-def make_service_stop_script():
-    os.chdir(install_dir)
-    logger.info("Changing to {}".format(os.path.abspath(os.curdir)))
-
-    txt = "#!/bin/bash\n"
-    # get pid from session.lock and send SIGINT to Crafty
-    txt += "kill -2 $({}/crafty-4/app/config/session.lock | grep -Eo '\"pid\": [0-9]+' | cut -d' ' -f2)\n".format(
-        install_dir
-    )
-    with open("stop_crafty_service.sh", "w") as fh:
-        fh.write(txt)
-        fh.close()
-
-    subprocess.check_output("chmod +x *.sh", shell=True)
-
-
 def make_service_file():
     os.chdir(install_dir)
     logger.info("Changing to {}".format(os.path.abspath(os.curdir)))
@@ -377,9 +360,6 @@ User=crafty
 WorkingDirectory={0}
 
 ExecStart=/usr/bin/bash {0}/run_crafty_service.sh
-ExecStop=/usr/bin/bash {0}/stop_crafty_service.sh
-
-KillMode=process
 
 Restart=on-failure
 # Other restart options: always, on-abort, etc
@@ -655,7 +635,6 @@ if __name__ == "__main__":
             make_service_file()
     else:
         make_service_script()
-        make_service_stop_script()
         make_service_file()
 
     # fixing permission issues
