@@ -631,7 +631,6 @@ if __name__ == "__main__":
         )
         if service_answer == "y":
             make_service_script()
-            make_service_stop_script()
             make_service_file()
     else:
         make_service_script()
