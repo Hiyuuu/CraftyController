@@ -1,0 +1,59 @@
+{
+  "distributions": [
+    {
+      "name": "arch",
+      "versions": "Rolling Release",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "archarm",
+      "versions": "Rolling Release",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "centos",
+      "versions": "9",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "debian",
+      "versions": "11, 12",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "fedora",
+      "versions": "39, 40",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "linuxmint",
+      "versions": "21.2, 21.3",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "manjaro",
+      "versions": "Rolling Release",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "pop",
+      "versions": "22.04",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "raspbian",
+      "versions": "11, 12",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "rocky",
+      "versions": "9.4",
+      "support_level": ":material-check-all: Full"
+    },
+    {
+      "name": "ubuntu",
+      "versions": "22.04, 23.10, 24.04",
+      "support_level": ":material-check-all: Full"
+    }
+  ]
+}
