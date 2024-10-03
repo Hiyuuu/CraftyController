@@ -429,9 +429,9 @@ def get_distro():
         distros = linux_versions.keys()
         logger.critical(f"Unsupported Distro - We only support {distros}")
         return
-    if version not in linux_versions[user_distro]:
+    if version not in linux_versions[user_distro]["versions"]:
         # Panic on Distro Version
-        versions = linux_versions[user_distro]
+        versions = linux_versions[user_distro]["versions"]
         logger.critical(
             f"Unsupported Version - We only support {user_distro}, {versions}"
         )
