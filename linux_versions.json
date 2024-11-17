@@ -64,5 +64,11 @@
             "24.04"
         ],
         "support-level": ":material-check-all: Full"
+    },
+    "zorin": {
+        "versions": [
+            "17.2"
+        ],
+        "support-level": ":material-check-all: Full"
     }
 }
