@@ -67,7 +67,7 @@
     },
     "zorin": {
         "versions": [
-            "17.2"
+            "17"
         ],
         "support-level": ":material-check-all: Full"
     }
