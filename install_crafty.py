@@ -89,7 +89,7 @@ def setup_repo():
     # create new virtual environment
     pretty.info("Creating New Virtual Environment")
 
-    venv_dir = os.path.join(install_dir, "venv")
+    venv_dir = os.path.join(install_dir, ".venv")
 
     # changing to install dir
     os.chdir(install_dir)
@@ -276,7 +276,7 @@ def make_startup_script():
 
     txt = "#!/bin/bash\n"
     txt += "cd {}\n".format(install_dir)
-    txt += "source venv/bin/activate \n"
+    txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "exec python{} main.py \n".format(sys.version_info.major)
     with open("run_crafty.sh", "w") as fh:
@@ -293,7 +293,7 @@ def make_update_script():
 
     txt = "#!/bin/bash\n"
     txt += "cd {}\n".format(install_dir)
-    txt += "source venv/bin/activate \n"
+    txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "\n"
     txt += "if [[ -v 1 ]]; then\n"
@@ -335,7 +335,7 @@ def make_service_script():
 
     txt = "#!/bin/bash\n"
     txt += "cd {}\n".format(install_dir)
-    txt += "source venv/bin/activate \n"
+    txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "python{} main.py -d\n".format(sys.version_info.major)
     with open("run_crafty_service.sh", "w") as fh:
