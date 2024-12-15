@@ -62,7 +62,8 @@
         "versions": [
             "22.04",
             "23.10",
-            "24.04"
+            "24.04",
+            "24.10"
         ],
         "support-level": ":material-check-all: Full"
     },
