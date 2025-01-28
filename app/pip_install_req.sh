@@ -2,7 +2,7 @@
 cd $1/crafty-4
 git checkout $2
 
-source ../venv/bin/activate
+source ../.venv/bin/activate
 
 pip3 install wheel
 pip3 install setuptools
