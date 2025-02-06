@@ -9,7 +9,8 @@
     },
     "centos": {
         "versions": [
-            "9"
+            "9",
+            "10"
         ],
         "support-level": ":material-check-all: Full"
     },
