@@ -31,7 +31,8 @@
         "versions": [
             "21.2",
             "21.3",
-            "22"
+            "22",
+            "22.1"
         ],
         "support-level": ":material-check-all: Full"
     },
