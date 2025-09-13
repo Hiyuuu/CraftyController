@@ -561,13 +561,13 @@ if __name__ == "__main__":
             CHOWN_CMD = f"sudo chown crafty:crafty {install_dir}"
 
             try:
-                subprocess.check_output(MKDIR_CMD)
+                subprocess.check_output(MKDIR_CMD, shell=True)
             except CalledProcessError as why:
                 logger.critical("Unable to make install dir with error: %s.", why)
                 pretty.critical(f"Unable to make install dir with error: {why}.")
 
             try:
-                subprocess.check_output(CHOWN_CMD)
+                subprocess.check_output(CHOWN_CMD, shell=True)
             except CalledProcessError as why:
                 logger.critical("Unable to chown install dir with error: %s.", why)
                 pretty.critical(f"Unable to chown install dir with error: {why}.")
