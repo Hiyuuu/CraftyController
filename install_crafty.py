@@ -567,19 +567,18 @@ if __name__ == "__main__":
                     txt += "sudo mkdir -p {}\n".format(install_dir)
                     txt += "sudo chown crafty:crafty {}\n".format(install_dir)
                     fh.write(txt)
-                    fh.close()
 
-                    subprocess.check_output(
-                        "chmod +x {}".format(fix_perms_sh), shell=True
+                subprocess.check_output(
+                    "chmod +x {}".format(fix_perms_sh), shell=True
+                )
+                subprocess.check_output(fix_perms_sh, shell=True)
+
+                if not helper.check_writeable(install_dir):
+                    logger.critical(
+                        "Unable to fix permissions issue after shell script"
                     )
-                    subprocess.check_output(fix_perms_sh, shell=True)
-
-                    if not helper.check_writeable(install_dir):
-                        logger.critical(
-                            "Unable to fix permissions issue after shell script"
-                        )
-                        pretty.critical("Unable to fix permissions issue")
-                        sys.exit(1)
+                    pretty.critical("Unable to fix permissions issue")
+                    sys.exit(1)
 
             except Exception as e:
                 logger.critical("Unable to fix permissions issue")
