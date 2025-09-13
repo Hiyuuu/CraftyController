@@ -4,6 +4,8 @@ import os
 import sys
 import json
 import time
+from subprocess import CalledProcessError
+
 import distro as pydistro
 import shutil
 import platform
@@ -555,34 +557,20 @@ if __name__ == "__main__":
             own_install_dir = "y"
 
         if own_install_dir == "y":
+            MKDIR_CMD = f"sudo mkdir -p {install_dir}"
+            CHOWN_CMD = f"sudo chown crafty:crafty {install_dir}"
+
             try:
-                # make a temp dir
-                helper.ensure_dir_exists(temp_dir)
+                subprocess.check_output(MKDIR_CMD)
+            except CalledProcessError as why:
+                logger.critical("Unable to make install dir with error: %s.", why)
+                pretty.critical(f"Unable to make install dir with error: {why}.")
 
-                # let's create a quick sh script to create the dir as root, and then chown the dir to the current user
-                fix_perms_sh = os.path.join(temp_dir, "fix_perms.sh")
-
-                with open(fix_perms_sh, "w") as fh:
-                    txt = "#!/bin/bash\n"
-                    txt += "sudo mkdir -p {}\n".format(install_dir)
-                    txt += "sudo chown crafty:crafty {}\n".format(install_dir)
-                    fh.write(txt)
-
-                subprocess.check_output(
-                    "chmod +x {}".format(fix_perms_sh), shell=True
-                )
-                subprocess.check_output(fix_perms_sh, shell=True)
-
-                if not helper.check_writeable(install_dir):
-                    logger.critical(
-                        "Unable to fix permissions issue after shell script"
-                    )
-                    pretty.critical("Unable to fix permissions issue")
-                    sys.exit(1)
-
-            except Exception as e:
-                logger.critical("Unable to fix permissions issue")
-                pretty.critical("Unable to fix permissions issue")
+            try:
+                subprocess.check_output(CHOWN_CMD)
+            except CalledProcessError as why:
+                logger.critical("Unable to chown install dir with error: %s.", why)
+                pretty.critical(f"Unable to chown install dir with error: {why}.")
 
             # after changing the ownership, let's see if we can write to it now.
             if not helper.check_writeable(install_dir):
