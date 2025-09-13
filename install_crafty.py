@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import pathlib
 import sys
 import json
 import time
@@ -557,20 +558,14 @@ if __name__ == "__main__":
             own_install_dir = "y"
 
         if own_install_dir == "y":
-            MKDIR_CMD = f"sudo mkdir -p {install_dir}"
-            CHOWN_CMD = f"sudo chown crafty:crafty {install_dir}"
+            install_dir_path = pathlib.Path(install_dir)
 
-            try:
-                subprocess.check_output(MKDIR_CMD, shell=True)
-            except CalledProcessError as why:
-                logger.critical("Unable to make install dir with error: %s.", why)
-                pretty.critical(f"Unable to make install dir with error: {why}.")
+            if os.geteuid() != 0:
+                logger.critical("This action requires root/sudo. Please elevate this script.")
+                pretty.critical("This action requires root/sudo. Please elevate this script.")
 
-            try:
-                subprocess.check_output(CHOWN_CMD, shell=True)
-            except CalledProcessError as why:
-                logger.critical("Unable to chown install dir with error: %s.", why)
-                pretty.critical(f"Unable to chown install dir with error: {why}.")
+            install_dir_path.mkdir(parents=True, exist_ok=True, mode=0o755)
+            shutil.chown(install_dir_path, user="crafty", group="crafty")
 
             # after changing the ownership, let's see if we can write to it now.
             if not helper.check_writeable(install_dir):
