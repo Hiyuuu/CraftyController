@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import pathlib
 import sys
 import json
 import time
@@ -556,10 +555,6 @@ if __name__ == "__main__":
             own_install_dir = "y"
 
         if own_install_dir == "y":
-
-            # More strictly try to create installation directory
-            pathlib.Path(install_dir).mkdir(parents=True, exist_ok=True)
-
             try:
                 # make a temp dir
                 helper.ensure_dir_exists(temp_dir)
