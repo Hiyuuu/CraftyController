@@ -564,7 +564,12 @@ if __name__ == "__main__":
                 logger.critical("This action requires root/sudo. Please elevate this script.")
                 pretty.critical("This action requires root/sudo. Please elevate this script.")
 
-            install_dir_path.mkdir(parents=True, exist_ok=True, mode=0o755)
+            try:
+                install_dir_path.mkdir(parents=True, exist_ok=True, mode=0o755)
+            except OSError as why:
+                logger.critical("Unable to mkdir %s with error %s", install_dir, why)
+                pretty.critical("Unable to mkdir {install_dir}. Terminating program")
+                sys.exit(1)
             shutil.chown(install_dir_path, user="crafty", group="crafty")
 
             # after changing the ownership, let's see if we can write to it now.
