@@ -563,6 +563,7 @@ if __name__ == "__main__":
             if os.geteuid() != 0:
                 logger.critical("This action requires root/sudo. Please elevate this script.")
                 pretty.critical("This action requires root/sudo. Please elevate this script.")
+                sys.exit(1)
 
             try:
                 install_dir_path.mkdir(parents=True, exist_ok=True, mode=0o755)
