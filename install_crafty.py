@@ -16,7 +16,7 @@ import distro as pydistro
 from app.helper import helper
 from app.pretty import pretty
 
-with open("config.json", "r") as fh:
+with open("config.json", "r", encoding="utf-8") as fh:
     defaults = json.load(fh)
 
 
@@ -122,7 +122,7 @@ def setup_repo():
 
 def confirm_ssh_key_location(key_location, tries=0):
     pretty.info("Attempts: {}".format(tries))
-    if key_location == None:
+    if key_location is None:
         key_location = helper.get_user_open_input(
             "Unable to detect ssh key - Please input the full path to your ssh key, or 'https' to fallback to https"
         )
@@ -282,7 +282,7 @@ def make_startup_script():
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "exec python{} main.py \n".format(sys.version_info.major)
-    with open("run_crafty.sh", "w") as fh:
+    with open("run_crafty.sh", "w", encoding="utf-8") as fh:
         fh.write(txt)
         fh.close()
 
@@ -324,7 +324,7 @@ def make_update_script():
     txt += "python3 -m ensurepip --upgrade \n"
     txt += "pip3 install --upgrade pip --no-cache-dir\n"
     txt += "pip3 install -r requirements.txt --no-cache-dir \n"
-    with open("update_crafty.sh", "w") as fh:
+    with open("update_crafty.sh", "w", encoding="utf-8") as fh:
         fh.write(txt)
         fh.close()
 
@@ -341,7 +341,7 @@ def make_service_script():
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "python{} main.py -d\n".format(sys.version_info.major)
-    with open("run_crafty_service.sh", "w") as fh:
+    with open("run_crafty_service.sh", "w", encoding="utf-8") as fh:
         fh.write(txt)
         fh.close()
 
@@ -378,7 +378,7 @@ WantedBy=multi-user.target
         install_dir
     )
 
-    with open("crafty.service", "w") as fh:
+    with open("crafty.service", "w", encoding="utf-8") as fh:
         fh.write(txt)
         fh.close()
 
@@ -391,7 +391,7 @@ WantedBy=multi-user.target
 def get_distro():
     id = pydistro.id()
     version = pydistro.version()
-    with open("linux_versions.json", "r") as fh:
+    with open("linux_versions.json", "r", encoding="utf-8") as fh:
         linux_versions = json.load(fh)
     sys.stdout.write(
         "We detected your os is: {id} - Version: {version}\n".format(
