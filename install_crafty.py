@@ -17,8 +17,8 @@ import distro as pydistro
 from app.helper import helper
 from app.pretty import pretty
 
-with open("config.json", "r", encoding="utf-8") as fh:
-    defaults = json.load(fh)
+with open("config.json", "r", encoding="utf-8") as config_file:
+    defaults = json.load(config_file)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--debug", help="Enables debugging mode", default=False, action="store_true")
@@ -65,7 +65,7 @@ def do_header():
 
 
 # here we can define other distro shell scripts for even better support
-def do_distro_install(distro):
+def do_distro_install(user_distro):
     real_dir = os.path.abspath(os.curdir)
 
     pretty.warning(
@@ -76,7 +76,7 @@ def do_distro_install(distro):
     )
 
     pretty.info("We are updating python3 and pip")
-    script = os.path.join(real_dir, "app", distro)
+    script = os.path.join(real_dir, "app", user_distro)
 
     logger.info("Running %s}", script)
 
@@ -292,9 +292,9 @@ def make_startup_script():
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "exec python{} main.py \n".format(sys.version_info.major)
-    with open("run_crafty.sh", "w", encoding="utf-8") as fh:
-        fh.write(txt)
-        fh.close()
+    with open("run_crafty.sh", "w", encoding="utf-8") as run_crafty_sh_file:
+        run_crafty_sh_file.write(txt)
+        run_crafty_sh_file.close()
 
     subprocess.check_output("chmod +x *.sh", shell=True)
 
@@ -334,9 +334,9 @@ def make_update_script():
     txt += "python3 -m ensurepip --upgrade \n"
     txt += "pip3 install --upgrade pip --no-cache-dir\n"
     txt += "pip3 install -r requirements.txt --no-cache-dir \n"
-    with open("update_crafty.sh", "w", encoding="utf-8") as fh:
-        fh.write(txt)
-        fh.close()
+    with open("update_crafty.sh", "w", encoding="utf-8") as update_crafty_sh_file:
+        update_crafty_sh_file.write(txt)
+        update_crafty_sh_file.close()
 
     subprocess.check_output("chmod +x *.sh", shell=True)
 
@@ -351,9 +351,9 @@ def make_service_script():
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "python{} main.py -d\n".format(sys.version_info.major)
-    with open("run_crafty_service.sh", "w", encoding="utf-8") as fh:
-        fh.write(txt)
-        fh.close()
+    with open("run_crafty_service.sh", "w", encoding="utf-8") as run_crafty_service_file:
+        run_crafty_service_file.write(txt)
+        run_crafty_service_file.close()
 
     subprocess.check_output("chmod +x *.sh", shell=True)
 
@@ -388,9 +388,9 @@ WantedBy=multi-user.target
         install_dir
     )
 
-    with open("crafty.service", "w", encoding="utf-8") as fh:
-        fh.write(txt)
-        fh.close()
+    with open("crafty.service", "w", encoding="utf-8") as crafty_service_file:
+        crafty_service_file.write(txt)
+        crafty_service_file.close()
 
     subprocess.check_output(
         "cp crafty.service /etc/systemd/system/crafty.service", shell=True
@@ -399,23 +399,21 @@ WantedBy=multi-user.target
 
 # get distro
 def get_distro():
-    id = pydistro.id()
+    distro_id = pydistro.id()
     version = pydistro.version()
-    with open("linux_versions.json", "r", encoding="utf-8") as fh:
-        linux_versions = json.load(fh)
+    with open("linux_versions.json", "r", encoding="utf-8") as linux_versions_file:
+        linux_versions = json.load(linux_versions_file)
     sys.stdout.write(
-        "We detected your os is: {id} - Version: {version}\n".format(
-            id=id, version=version
-        )
+        f"We detected your os is: {distro_id} - Version: {version}\n"
     )
 
     file = False
 
-    if id == "arch" or id == "archarm" or id == "manjaro":
-        logger.info("%s version %s Dectected", id, version)
+    if distro_id == "arch" or distro_id == "archarm" or distro_id == "manjaro":
+        logger.info("%s version %s Dectected", distro_id, version)
         return "arch.sh"
 
-    user_distro = id
+    user_distro = distro_id
     user_version = str(version).replace(".", "_")
     if user_distro not in linux_versions:
         # Panic on Distro
@@ -439,7 +437,7 @@ def get_distro():
     elif helper.check_file_exists(os.path.join(f"app", f"{user_distro}.sh")):
         file = f"{user_distro}.sh"
     if not file:
-        logger.critical("Unable to determine distro: ID:%s - Version:%s", id, version)
+        logger.critical("Unable to determine distro: ID:%s - Version:%s", distro_id, version)
         logger.debug("File is: %s", file)
     return file
 
