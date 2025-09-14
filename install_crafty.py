@@ -471,7 +471,7 @@ if __name__ == "__main__":
 
     # are we at least on 3.8?
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 9):
-        pretty.critical("This script requires Python 3.8 or higher!")
+        pretty.critical("This script requires Python 3.9 or higher!")
         pretty.critical(
             f"You are using Python {sys.version_info.major}.{sys.version_info.minor}."
         )
