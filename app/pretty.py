@@ -11,16 +11,16 @@ class bcolors:
 
 class pretty_print:
     def info(self, message):
-        print("[+] Info:{}- {}{}".format(bcolors.OKGREEN, message, bcolors.ENDC))
+        print(f"[+] Info:{bcolors.OKGREEN}- {message}{bcolors.ENDC}")
 
     def warning(self, message):
-        print("{}[-] Warning: {}{}".format(bcolors.WARNING, message, bcolors.ENDC))
+        print(f"{bcolors.WARNING}[-] Warning: {message}{bcolors.ENDC}")
 
     def critical(self, message):
-        print("{}[-] Critical: {}{}".format(bcolors.FAIL, message, bcolors.ENDC))
+        print(f"{bcolors.FAIL}[-] Critical: {message}{bcolors.ENDC}")
 
     def header(self, message):
-        print("{}{}{}".format(bcolors.HEADER, message, bcolors.ENDC))
+        print(f"{bcolors.HEADER}{message}{bcolors.ENDC}")
 
 
 pretty = pretty_print()
