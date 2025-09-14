@@ -35,13 +35,13 @@ class helper_obj:
     def get_user_valid_input(self, q, valid_answers):
         while True:
             n = input(
-                "\n{}{} - {}{}: ".format(bcolors.BOLD, q, valid_answers, bcolors.ENDC)
+                f"\n{bcolors.BOLD}{q} - {valid_answers}{bcolors.ENDC}: "
             ).lower()
             if n in valid_answers:
                 return n
 
     def get_user_open_input(self, q):
-        n = input("\n{}{}{}: ".format(bcolors.BOLD, q, bcolors.ENDC))
+        n = input(f"\n{bcolors.BOLD}{q}{bcolors.ENDC}: ")
         return n
 
     def ensure_dir_exists(self, path):
@@ -53,16 +53,16 @@ class helper_obj:
             filepath.touch()
             filepath.unlink()
 
-            logging.info("{} is writable".format(filename))
+            logging.info("%s is writable", filepath)
             return True
 
         except Exception as e:
-            logging.critical("Unable to write to {} - Error: {}".format(path, e))
+            logging.exception("Unable to write to %s - Error:", check_path, exc_info=e)
             return False
 
-    def check_file_exists(self, path):
-        if os.path.exists(path) and os.path.isfile(path):
-            logging.debug("Found path: {}".format(path))
+    def check_file_exists(self, check_path):
+        if os.path.exists(check_path) and os.path.isfile(check_path):
+            logging.debug("Found path: %s", check_path)
             return True
         else:
             return False
