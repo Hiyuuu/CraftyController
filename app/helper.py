@@ -25,9 +25,9 @@ class helper_obj:
         time.sleep(0.5)
         os.system("clear")
 
-    def run_command(self, command_list):
+    def run_command(self, command_line: list) -> tuple:
         process = subprocess.Popen(
-            ["ls", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            command_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         out, err = process.communicate()
         return out, err
@@ -47,11 +47,11 @@ class helper_obj:
     def ensure_dir_exists(self, path):
         pathlib.Path(path).mkdir(exist_ok=True)
 
-    def check_writeable(self, path):
-        filename = os.path.join(path, "tempfile.txt")
+    def check_writeable(self, check_path):
+        filepath = pathlib.Path(check_path, "tempfile.txt")
         try:
-            fp = open(filename, "w").close()
-            os.remove(filename)
+            filepath.touch()
+            filepath.unlink()
 
             logging.info("{} is writable".format(filename))
             return True
