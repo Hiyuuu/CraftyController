@@ -8,7 +8,6 @@ import pathlib
 import platform
 import shutil
 import subprocess
-from subprocess import CalledProcessError
 import sys
 import time
 
@@ -37,6 +36,7 @@ args = parser.parse_args()
 
 if args.debug:
     defaults["debug_mode"] = True
+if defaults["debug_mode"]:
     logger.setLevel(logging.DEBUG)
     pretty.info("Debug mode turned on")
     logger.info("Debug mode turned on")
@@ -80,44 +80,51 @@ def do_distro_install(target_distro):
 
     logger.info("Running %s}", script)
 
-    # resp = subprocess.check_output("app/ubuntu_install_depends.sh", shell=True)
     try:
         # Going to ensure our script has full permissions.
         os.chmod(script, 0o0775)
-        p = subprocess.Popen(script, shell=True, stdout=subprocess.PIPE)
+        p = subprocess.Popen(script, stdout=subprocess.PIPE)
         while True:
             line = p.stdout.readline()
             if not line:
                 break
             sys.stdout.write(line.decode("utf-8"))
+        rc = p.poll()
+        if rc != 0:
+            raise RuntimeError(f"script exited with code {rc}")
 
     except Exception as e:
         pretty.critical(f"Error installing dependencies: {e}")
         logger.exception("Error installing dependencies: %s", exc_info=e)
+        sys.exit(1)
 
 
 # creates the venv and clones the git repo
-def setup_repo():
+def setup_repo(target_directory: pathlib.Path):
     do_header()
 
     # create new virtual environment
     pretty.info("Creating New Virtual Environment")
 
-    venv_dir = os.path.join(install_dir, ".venv")
+    venv_dir = pathlib.Path(target_directory, ".venv")
 
     # changing to install dir
-    os.chdir(install_dir)
+    os.chdir(target_directory)
     pretty.info(f"Jumping into install directory: {os.path.abspath(os.curdir)}")
     logger.info("Changed directory to: %s", os.path.abspath(os.curdir))
 
     # creating venv
     try:
-        subprocess.check_output(
-            "{py} -m venv {dir}".format(py=sys.executable, dir=venv_dir), shell=True
-        )
+        subprocess.check_output([sys.executable, "-m", "venv", venv_dir], text=True)
+    except subprocess.CalledProcessError as e:
+        pretty.critical("Unable to create virtual environment - venv creation failed (see log)")
+        logger.critical("venv subprocess returned abnormally with code %i and output:\n%s", e.returncode, e.output)
+        helper.cleanup_bad_install(target_directory)
+        sys.exit(1)
     except Exception as e:
+        pretty.critical(f"Unable to create virtual environment - {e}")
         logger.exception("Unable to create virtual environment!", exc_info=e)
-        helper.cleanup_bad_install(install_dir)
+        helper.cleanup_bad_install(target_directory)
         sys.exit(1)
 
     clone_method = defaults["clone_method"]
@@ -125,9 +132,9 @@ def setup_repo():
     # cloning the repo
     pretty.info("Cloning the Git Repo...this could take a few moments")
     if clone_method == "ssh":
-        clone_repo_ssh()
+        clone_repo_ssh(target_directory)
     else:
-        clone_repo_https()
+        clone_repo_https(target_directory)
 
 
 def confirm_ssh_key_location(key_location, tries=0):
@@ -159,7 +166,7 @@ def confirm_ssh_key_location(key_location, tries=0):
         return confirm_ssh_key_location(key_location, tries + 1)
 
 
-def clone_repo_ssh():
+def clone_repo_ssh(target_directory: pathlib.Path):
     invoking_user = os.getenv("SUDO_USER", "root")
     user_ssh_dir = f"/home/{invoking_user}/.ssh/"
     if helper.check_file_exists(user_ssh_dir + "id_ed25519"):
@@ -170,38 +177,38 @@ def clone_repo_ssh():
         ssh_key_loc = confirm_ssh_key_location(None)
 
     if ssh_key_loc == "https":
-        return clone_repo_https()
+        return clone_repo_https(target_directory)
 
     try:
+        embed_ssh_command = "ssh -i '{ssh_key_loc}'"
         subprocess.check_output(
-            'git clone git@gitlab.com:crafty-controller/crafty-4.git  --config core.sshCommand="ssh -i {}"'.format(
-                ssh_key_loc
-            ),
-            shell=True,
+            ["git", "clone", "git@gitlab.com:crafty-controller/crafty-4.git", "--config", f"core.sshCommand=\"{embed_ssh_command}\""], text=True
         )
-    except Exception as e:
-        logger.exception("Error: %s", exc_info=e)
+    except subprocess.CalledProcessError as e:
+        logger.critical("git clone returned abnormally with code %i and output:\n%s", e.returncode, e.output)
         logger.critical("Git clone failed! Did you specify the correct key?")
         pretty.critical("Failed to clone. Falling back to HTTPS.")
-        clone_repo_https()
+        clone_repo_https(target_directory)
+    except Exception as e:
+        logger.exception("Error: %s", exc_info=e)
+        helper.cleanup_bad_install(target_directory)
+        sys.exit(1)
 
 
-def clone_repo_https():
+def clone_repo_https(target_directory: pathlib.Path):
     try:
-        subprocess.check_output(
-            "git clone https://gitlab.com/crafty-controller/crafty-4.git", shell=True
-        )
+        subprocess.check_output(["git", "clone", "https://gitlab.com/crafty-controller/crafty-4.git"])
     except Exception as e:
         logger.critical("Git clone failed!")
         logger.exception("Error:", exc_info=e)
         pretty.critical("Unable to clone. Please check the install.log for details!")
         pretty.warning("Cleaning up partial install and exiting...")
-        helper.cleanup_bad_install(install_dir)
+        helper.cleanup_bad_install(target_directory)
         sys.exit(1)
 
 
 # this switches to the branch chosen and does the pip install and such
-def do_virt_dir_install():
+def do_virt_dir_install(starting_directory: pathlib.Path, target_directory: pathlib.Path):
     do_header()
 
     # choose your destiny
@@ -219,15 +226,13 @@ def do_virt_dir_install():
     else:
         branch = defaults["branch"]
 
+    crafty_directory = pathlib.Path(target_directory, "crafty-4").resolve()
     # changing to git repo dir
-    os.chdir(os.path.join(install_dir, "crafty-4"))
-    pretty.info(f"Jumping into repo directory: {os.path.abspath(os.curdir)}")
-    logger.info("Changed directory to: %s", os.path.abspath(os.curdir))
+    pretty.info(f"Jumping into repo directory: {crafty_directory}")
+    logger.info("Changed directory to: %s", crafty_directory)
+    os.chdir(crafty_directory)
 
     logger.info("User choose %s branch", branch)
-
-    # default empty output
-    git_output = ""
 
     # branch selection
     if branch == "master":
@@ -237,22 +242,22 @@ def do_virt_dir_install():
         pretty.info("Way to saddle up cowboy!")
 
     # create a quick script / execute pip install
-    do_pip_install(branch)
+    do_pip_install(branch, starting_directory, target_directory)
 
 
 # installs pip requirements via shell script
-def do_pip_install(branch):
-    os.chmod(os.path.join(starting_dir, "app", "pip_install_req.sh"), 0o0775)
-    src = os.path.join(starting_dir, "app", "pip_install_req.sh")
-    dst = os.path.join(install_dir, "pip_install_req.sh")
+def do_pip_install(branch: str, starting_directory: pathlib.Path, target_directory: pathlib.Path):
+    os.chmod(pathlib.Path(starting_directory, "app", "pip_install_req.sh"), 0o0775)
+    pip_install_script_src = pathlib.Path(starting_directory, "app", "pip_install_req.sh")
+    pip_install_script_dst = pathlib.Path(target_directory, "pip_install_req.sh")
 
     logger.info("Copying PIP install script")
-    shutil.copyfile(src, dst)
+    shutil.copyfile(pip_install_script_src, pip_install_script_dst)
 
-    pip_command = "{} '{}' {}".format(dst, install_dir, branch)
+    pip_command = [pip_install_script_dst, target_directory, branch]
 
-    logger.info("chmod +x %s", dst)
-    subprocess.check_call("chmod +x {}".format(dst), shell=True)
+    logger.info("Ensuring exec on file %s", pip_install_script_dst)
+    helper.chmod_add_exec(pip_install_script_dst)
 
     logger.info("Running Pip: %s", pip_command)
     pretty.warning(
@@ -263,47 +268,47 @@ def do_pip_install(branch):
     time.sleep(3)
 
     try:
-        p = subprocess.Popen([pip_command], shell=True, stdout=subprocess.PIPE)
+        p = subprocess.Popen(pip_command, stdout=subprocess.PIPE)
         while True:
             line = p.stdout.readline()
             if not line:
                 break
             sys.stdout.write(line.decode("utf-8"))
-
-        # pip_output = subprocess.check_output(pip_command, shell=True)
-        # logger.info("Pip output: \n{}".format(pip_output))
+        rc = p.poll()
+        if rc != 0:
+            raise RuntimeError(f"abnormal exit code {rc}")
 
     except Exception as e:
         logger.error("Pip failed due to error: %s", e)
+        sys.exit(1)
 
     if not defaults["debug_mode"]:
-        os.remove(dst)
+        os.remove(pip_install_script_dst)
 
 
 # Creates the run_crafty.sh
-def make_startup_script():
-    os.chdir(install_dir)
+def make_startup_script(target_directory: pathlib.Path):
+    os.chdir(target_directory)
     logger.info("Changing to %s", os.path.abspath(os.curdir))
 
     txt = "#!/bin/bash\n"
-    txt += f"cd {install_dir}\n"
+    txt += f"cd {target_directory}\n"
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += f"exec python{sys.version_info.major} main.py \n"
     with open("run_crafty.sh", "w", encoding="utf-8") as run_crafty_sh_file:
         run_crafty_sh_file.write(txt)
         run_crafty_sh_file.close()
-
-    subprocess.check_output("chmod +x *.sh", shell=True)
+    helper.chmod_add_exec("run_crafty.sh")
 
 
 # Creates the update_crafty.sh
-def make_update_script():
-    os.chdir(install_dir)
+def make_update_script(target_directory: pathlib.Path):
+    os.chdir(target_directory)
     logger.info("Changing to %s", os.path.abspath(os.curdir))
 
     txt = "#!/bin/bash\n"
-    txt += f"cd {install_dir}\n"
+    txt += f"cd {target_directory}\n"
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += "\n"
@@ -336,16 +341,16 @@ def make_update_script():
         update_crafty_sh_file.write(txt)
         update_crafty_sh_file.close()
 
-    subprocess.check_output("chmod +x *.sh", shell=True)
+    helper.chmod_add_exec("update_crafty.sh")
 
 
 # Creates the run as a service.sh
-def make_service_script():
-    os.chdir(install_dir)
+def make_service_script(target_directory: pathlib.Path):
+    os.chdir(target_directory)
     logger.info("Changing to %s", os.path.abspath(os.curdir))
 
     txt = "#!/bin/bash\n"
-    txt += f"cd {install_dir}\n"
+    txt += f"cd {target_directory}\n"
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += f"python{sys.version_info.major} main.py -d\n"
@@ -353,11 +358,11 @@ def make_service_script():
         run_crafty_service_file.write(txt)
         run_crafty_service_file.close()
 
-    subprocess.check_output("chmod +x *.sh", shell=True)
+    helper.chmod_add_exec("run_crafty_service.sh")
 
 
-def make_service_file():
-    os.chdir(install_dir)
+def make_service_file(target_directory: pathlib.Path):
+    os.chdir(target_directory)
     logger.info("Changing to %s", os.path.abspath(os.curdir))
     txt = f"""
 [Unit]
@@ -368,9 +373,9 @@ After=network.target
 Type=simple
 
 User=crafty
-WorkingDirectory={install_dir}
+WorkingDirectory={target_directory}
 
-ExecStart=/usr/bin/bash {install_dir}/run_crafty_service.sh
+ExecStart=/usr/bin/bash {target_directory}/run_crafty_service.sh
 
 Restart=on-failure
 # Other restart options: always, on-abort, etc
@@ -388,9 +393,7 @@ WantedBy=multi-user.target
         crafty_service_file.write(txt)
         crafty_service_file.close()
 
-    subprocess.check_output(
-        "cp crafty.service /etc/systemd/system/crafty.service", shell=True
-    )
+    shutil.copy2(pathlib.Path(target_directory, "crafty.service"), "/etc/systemd/system/")
 
 
 # get distro
@@ -403,7 +406,7 @@ def get_distro():
         f"We detected your os is: {distro_id} - Version: {version}\n"
     )
 
-    file = False
+    distro_file = None
 
     if distro_id == "arch" or distro_id == "archarm" or distro_id == "manjaro":
         logger.info("%s version %s Dectected", distro_id, version)
@@ -429,20 +432,20 @@ def get_distro():
     if helper.check_file_exists(
         os.path.join("app", f"{current_distro}_{user_version}.sh")
     ):
-        file = f"{current_distro}_{user_version}.sh"
+        distro_file = f"{current_distro}_{user_version}.sh"
     elif helper.check_file_exists(os.path.join("app", f"{current_distro}.sh")):
-        file = f"{current_distro}.sh"
-    if not file:
+        distro_file = f"{current_distro}.sh"
+    if distro_file is None:
         logger.critical("Unable to determine distro: ID:%s - Version:%s", distro_id, version)
-        logger.debug("File is: %s", file)
-    return file
+        logger.debug("File is: %s", distro_file)
+    return distro_file
 
 
 if __name__ == "__main__":
     logger.info("Installer Started")
 
-    starting_dir = os.path.abspath(os.path.curdir)
-    temp_dir = os.path.join(starting_dir, "temp")
+    starting_dir = pathlib.Path(os.path.curdir).resolve()
+    temp_dir = pathlib.Path(starting_dir, "temp")
 
     do_header()
 
@@ -512,58 +515,45 @@ if __name__ == "__main__":
 
     # unattended
     if not defaults["unattended"]:
-        install_dir = helper.get_user_valid_input(
-            f"Install Crafty to this directory? {defaults["install_dir"]}",
-            ["y", "n"],
-        )
+        install_use_default = helper.get_user_yesno(f"Install Crafty to this directory? {defaults["install_dir"]}")
     else:
-        install_dir = "y"
+        install_use_default = True
 
     do_header()
 
-    if install_dir == "n":
-        install_dir = helper.get_user_open_input(
-            "Where would you like Crafty to install to?"
-        )
+    if not install_use_default:
+        install_dir = pathlib.Path(helper.get_user_open_input("Where would you like Crafty to install to?")).resolve()
     else:
-        install_dir = defaults["install_dir"]
+        install_dir = pathlib.Path(defaults["install_dir"]).resolve()
 
     pretty.info(f"Installing Crafty to {install_dir}")
     logger.info("Installing Crafty to %s", install_dir)
 
-    # can we write to the dir?
-    if not helper.check_writeable(install_dir):
-        pretty.warning(f"Unable to write to {install_dir} - Permission denied")
-        logger.warning("Unable to write to %s - Permission denied", install_dir)
-
-        # unattended
-        if not defaults["unattended"]:
-            own_install_dir = helper.get_user_valid_input(
-                "Do you want us to fix this permission issue?", ["y", "n"]
-            )
-        else:
-            own_install_dir = "y"
-
-        if own_install_dir == "y":
-            install_dir_path = pathlib.Path(install_dir)
-
+    # does the install directory exist?
+    if not install_dir.is_dir():
+        logger.debug("Installation directory %s does not yet exist", install_dir)
+        try:
+            install_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
+            shutil.chown(install_dir, user="crafty", group="crafty")
+        except OSError as e:
+            logger.critical("Unable to create install directory %s with error %s", install_dir, e)
+            pretty.critical("Unable to create install directory {install_dir}. Terminating program")
             if os.geteuid() != 0:
-                logger.critical("This action requires root/sudo. Please elevate this script.")
-                pretty.critical("This action requires root/sudo. Please elevate this script.")
-                sys.exit(1)
+                logger.critical("This action likely require root/sudo - elevating this script may solve the above issue")
+                pretty.critical("This action likely require root/sudo - elevating this script may solve the above issue")
+            sys.exit(1)
 
-            try:
-                install_dir_path.mkdir(parents=True, exist_ok=True, mode=0o755)
-            except OSError as why:
-                logger.critical("Unable to mkdir %s with error %s", install_dir, why)
-                pretty.critical("Unable to mkdir {install_dir}. Terminating program")
-                sys.exit(1)
-            shutil.chown(install_dir_path, user="crafty", group="crafty")
-
-            # after changing the ownership, let's see if we can write to it now.
-            if not helper.check_writeable(install_dir):
-                logger.critical("%s is still unwritable - Unable to fix permissions issue", install_dir)
-                sys.exit(1)
+    logger.debug("Checking if installation directory has correct ownership")
+    install_dir_stat = install_dir.stat()
+    logger.debug("Installation directory has ownership of %s:%s with mode %s (expected crafty:crafty 0755)", install_dir.owner(), install_dir.group(), oct(install_dir_stat.st_mode))
+    if not (
+        install_dir.owner() == "crafty" and
+        install_dir.group() == "crafty" and
+        (install_dir_stat.st_mode & 0o777) == 0o755):
+        logger.debug("Installation directory did not match ownership/mode check")
+        if helper.get_user_yesno("Installation directory has an unexpected user, group, or mode - should we attempt to fix this?"):
+            shutil.chown(install_dir, user="crafty", group="crafty")
+            install_dir.chmod(0o755)
 
     # is this a fresh install?
     files = os.listdir(install_dir)
@@ -584,32 +574,32 @@ if __name__ == "__main__":
         time.sleep(10)
         sys.exit()
 
-    setup_repo()
+    setup_repo(install_dir)
 
-    do_virt_dir_install()
+    do_virt_dir_install(starting_dir, install_dir)
 
     do_header()
 
     logger.info("Creating Shell Scripts")
     pretty.info("Making start and update scripts for you")
 
-    make_startup_script()
-    make_update_script()
+    make_startup_script(install_dir)
+    make_update_script(install_dir)
 
     if not defaults["unattended"]:
-        service_answer = helper.get_user_valid_input(
-            "Would you like to make a service file for Crafty?", ["y", "n"]
-        )
-        if service_answer == "y":
-            make_service_script()
-            make_service_file()
+        service_answer = helper.get_user_yesno("Would you like to make a service file for Crafty?")
+        if service_answer:
+            make_service_script(install_dir)
+            make_service_file(install_dir)
     else:
-        make_service_script()
-        make_service_file()
+        make_service_script(install_dir)
+        make_service_file(install_dir)
 
     # fixing permission issues
-    cmd = "sudo chown crafty:crafty -R {dir}".format(dir=install_dir)
-    subprocess.check_output(cmd, shell=True)
+    logger.info("Fixing ownership issues on %s", install_dir)
+    for installed_file in install_dir.glob("**"):
+        logger.debug("Changing ownership of %s", installed_file)
+        shutil.chown(installed_file, user="crafty", group="crafty")
 
     time.sleep(1)
     do_header()
