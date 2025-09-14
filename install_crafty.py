@@ -299,7 +299,7 @@ def make_startup_script(target_directory: pathlib.Path):
     with open("run_crafty.sh", "w", encoding="utf-8") as run_crafty_sh_file:
         run_crafty_sh_file.write(txt)
         run_crafty_sh_file.close()
-    helper.chmod_add_exec("run_crafty.sh")
+    helper.chmod_add_exec(pathlib.Path("run_crafty.sh"))
 
 
 # Creates the update_crafty.sh
@@ -341,7 +341,7 @@ def make_update_script(target_directory: pathlib.Path):
         update_crafty_sh_file.write(txt)
         update_crafty_sh_file.close()
 
-    helper.chmod_add_exec("update_crafty.sh")
+    helper.chmod_add_exec(pathlib.Path("update_crafty.sh"))
 
 
 # Creates the run as a service.sh
@@ -358,7 +358,7 @@ def make_service_script(target_directory: pathlib.Path):
         run_crafty_service_file.write(txt)
         run_crafty_service_file.close()
 
-    helper.chmod_add_exec("run_crafty_service.sh")
+    helper.chmod_add_exec(pathlib.Path("run_crafty_service.sh"))
 
 
 def make_service_file(target_directory: pathlib.Path):
