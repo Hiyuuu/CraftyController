@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import logging
 import os
@@ -19,21 +20,31 @@ from app.pretty import pretty
 with open("config.json", "r", encoding="utf-8") as fh:
     defaults = json.load(fh)
 
+parser = argparse.ArgumentParser()
+parser.add_argument("-d", "--debug", help="Enables debugging mode", default=False, action="store_true")
+parser.add_argument("-s", "--ssh", help="Runs git in SSH mode", default=False, action="store_true")
 
-def remove_duplicate_args(l):
-    return list(set(l))
+logging.basicConfig(
+    filename="installer.log",
+    filemode="w",
+    format="[+] Crafty Installer: %(levelname)s - %(message)s",
+    level=logging.INFO,
+)
 
+logger = logging.getLogger(__name__)
 
-if len(sys.argv) > 1:
-    arguments = remove_duplicate_args(sys.argv[1:])
+args = parser.parse_args()
 
-    if "-d" in arguments:
-        defaults["debug_mode"] = True
-        pretty.info("Debug mode turned on")
+if args.debug:
+    defaults["debug_mode"] = True
+    logger.setLevel(logging.DEBUG)
+    pretty.info("Debug mode turned on")
+    logger.info("Debug mode turned on")
 
-    if "-s" in arguments:
-        defaults["clone_method"] = "ssh"
-        pretty.info("Git will try to clone using SSH")
+if args.ssh:
+    defaults["clone_method"] = "ssh"
+    pretty.info("Git will try to clone using SSH")
+    logger.info("Git will try to clone using SSH")
 
 
 # our pretty header
@@ -434,15 +445,6 @@ def get_distro():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        filename="installer.log",
-        filemode="w",
-        format="[+] Crafty Installer: %(levelname)s - %(message)s",
-        level=logging.INFO,
-    )
-
-    logger = logging.getLogger(__name__)
-
     logger.info("Installer Started")
 
     starting_dir = os.path.abspath(os.path.curdir)
