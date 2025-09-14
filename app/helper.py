@@ -4,6 +4,7 @@ import pathlib
 import shutil
 import subprocess
 import time
+from typing import Union
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +33,7 @@ class helper_obj:
         out, err = process.communicate()
         return out, err
 
-    def get_user_valid_input(self, q, valid_answers):
+    def get_user_valid_input(self, q: str, valid_answers: list[str]) -> str:
         while True:
             n = input(
                 f"\n{bcolors.BOLD}{q} - {valid_answers}{bcolors.ENDC}: "
@@ -40,7 +41,16 @@ class helper_obj:
             if n in valid_answers:
                 return n
 
-    def get_user_open_input(self, q):
+    def get_user_yesno(self, q: str) -> Union[bool|None]:
+        response = self.get_user_valid_input(q, ["y", "n"])
+        if response == "y":
+            return True
+        elif response == "n":
+            return False
+        else:
+            return None
+
+    def get_user_open_input(self, q: str) -> str:
         n = input(f"\n{bcolors.BOLD}{q}{bcolors.ENDC}: ")
         return n
 
@@ -71,6 +81,12 @@ class helper_obj:
         shutil.rmtree(install_dir)
         if self.check_file_exists("/etc/systemd/system/crafty.service"):
             os.remove("/etc/systemd/system/crafty.service")
+
+    def chmod_add_exec(self, target_file: pathlib.Path):
+        fstat = target_file.stat(follow_symlinks=True)
+        read_bits = fstat.st_mode & 0o444
+        exec_bits = read_bits >> 2
+        target_file.chmod(fstat.st_mode | exec_bits)
 
 
 helper = helper_obj()
