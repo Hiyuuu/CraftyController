@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
+import json
+import logging
 import os
 import pathlib
-import sys
-import json
-import time
+import platform
+import shutil
+import subprocess
 from subprocess import CalledProcessError
+import sys
+import time
 
 import distro as pydistro
-import shutil
-import platform
-import logging
-import subprocess
 
 from app.helper import helper
 from app.pretty import pretty
