@@ -67,7 +67,7 @@ def do_distro_install(distro):
     pretty.info("We are updating python3 and pip")
     script = os.path.join(real_dir, "app", distro)
 
-    logger.info(f"Running {script}")
+    logger.info("Running %s}", script)
 
     # resp = subprocess.check_output("app/ubuntu_install_depends.sh", shell=True)
     try:
@@ -82,7 +82,7 @@ def do_distro_install(distro):
 
     except Exception as e:
         pretty.critical("Error installing dependencies: {}".format(e))
-        logger.critical("Error installing dependencies: {}".format(e))
+        logger.critical("Error installing dependencies: %s", e)
 
 
 # creates the venv and clones the git repo
@@ -97,7 +97,7 @@ def setup_repo():
     # changing to install dir
     os.chdir(install_dir)
     pretty.info("Jumping into install directory: {}".format(os.path.abspath(os.curdir)))
-    logger.info("Changed directory to: {}".format(os.path.abspath(os.curdir)))
+    logger.info("Changed directory to: %s", os.path.abspath(os.curdir))
 
     # creating venv
     try:
@@ -105,8 +105,7 @@ def setup_repo():
             "{py} -m venv {dir}".format(py=sys.executable, dir=venv_dir), shell=True
         )
     except Exception as e:
-        logger.critical("Unable to create virtual environment!")
-        logger.critical("Error: {}".format(e))
+        logger.exception("Unable to create virtual environment!", exc_info=e)
         helper.cleanup_bad_install(install_dir)
         sys.exit(1)
 
@@ -172,7 +171,7 @@ def clone_repo_ssh():
             shell=True,
         )
     except Exception as e:
-        logger.critical("Error: {}".format(e))
+        logger.exception("Error: %s", exc_info=e)
         logger.critical("Git clone failed! Did you specify the correct key?")
         pretty.critical("Failed to clone. Falling back to HTTPS.")
         clone_repo_https()
@@ -185,7 +184,7 @@ def clone_repo_https():
         )
     except Exception as e:
         logger.critical("Git clone failed!")
-        logger.critical("Error: {}".format(e))
+        logger.exception("Error:", exc_info=e)
         pretty.critical("Unable to clone. Please check the install.log for details!")
         pretty.warning("Cleaning up partial install and exiting...")
         helper.cleanup_bad_install(install_dir)
@@ -214,9 +213,9 @@ def do_virt_dir_install():
     # changing to git repo dir
     os.chdir(os.path.join(install_dir, "crafty-4"))
     pretty.info("Jumping into repo directory: {}".format(os.path.abspath(os.curdir)))
-    logger.info("Changed directory to: {}".format(os.path.abspath(os.curdir)))
+    logger.info("Changed directory to: %s", os.path.abspath(os.curdir))
 
-    logger.info("User choose {} branch".format(branch))
+    logger.info("User choose %s branch", branch)
 
     # default empty output
     git_output = ""
@@ -243,10 +242,10 @@ def do_pip_install(branch):
 
     pip_command = "{} '{}' {}".format(dst, install_dir, branch)
 
-    logger.info("Chmod +x {}".format(dst))
+    logger.info("chmod +x %s", dst)
     subprocess.check_call("chmod +x {}".format(dst), shell=True)
 
-    logger.info("Running Pip: {}".format(pip_command))
+    logger.info("Running Pip: %s", pip_command)
     pretty.warning(
         "We are now going to install all the python modules for Crafty - This process can take awhile "
         "depending on your internet connection"
@@ -266,7 +265,7 @@ def do_pip_install(branch):
         # logger.info("Pip output: \n{}".format(pip_output))
 
     except Exception as e:
-        logger.error("Pip failed due to error: {}".format(e))
+        logger.error("Pip failed due to error: %s", e)
 
     if not defaults["debug_mode"]:
         os.remove(dst)
@@ -275,7 +274,7 @@ def do_pip_install(branch):
 # Creates the run_crafty.sh
 def make_startup_script():
     os.chdir(install_dir)
-    logger.info("Changing to {}".format(os.path.abspath(os.curdir)))
+    logger.info("Changing to %s", os.path.abspath(os.curdir))
 
     txt = "#!/bin/bash\n"
     txt += "cd {}\n".format(install_dir)
@@ -292,7 +291,7 @@ def make_startup_script():
 # Creates the update_crafty.sh
 def make_update_script():
     os.chdir(install_dir)
-    logger.info("Changing to {}".format(os.path.abspath(os.curdir)))
+    logger.info("Changing to %s", os.path.abspath(os.curdir))
 
     txt = "#!/bin/bash\n"
     txt += "cd {}\n".format(install_dir)
@@ -334,7 +333,7 @@ def make_update_script():
 # Creates the run as a service.sh
 def make_service_script():
     os.chdir(install_dir)
-    logger.info("Changing to {}".format(os.path.abspath(os.curdir)))
+    logger.info("Changing to %s", os.path.abspath(os.curdir))
 
     txt = "#!/bin/bash\n"
     txt += "cd {}\n".format(install_dir)
@@ -350,7 +349,7 @@ def make_service_script():
 
 def make_service_file():
     os.chdir(install_dir)
-    logger.info("Changing to {}".format(os.path.abspath(os.curdir)))
+    logger.info("Changing to %s", os.path.abspath(os.curdir))
     txt = """
 [Unit]
 Description=Crafty 4
@@ -402,7 +401,7 @@ def get_distro():
     file = False
 
     if id == "arch" or id == "archarm" or id == "manjaro":
-        logger.info(f"{id} version {version} Dectected")
+        logger.info("%s version %s Dectected", id, version)
         return "arch.sh"
 
     user_distro = id
@@ -410,17 +409,17 @@ def get_distro():
     if user_distro not in linux_versions:
         # Panic on Distro
         distros = linux_versions.keys()
-        logger.critical(f"Unsupported Distro - We only support {distros}")
+        logger.critical("Unsupported Distro - We only support %s", distros)
         return
     if version not in linux_versions[user_distro]["versions"]:
         # Panic on Distro Version
         versions = linux_versions[user_distro]["versions"]
         logger.critical(
-            f"Unsupported Version - We only support {user_distro}, {versions}"
+            "Unsupported Version - We only support %s, %s", user_distro, versions
         )
         return
 
-    logger.info(f"{user_distro} {user_version} Detected!")
+    logger.info("%s %s Detected!", user_distro, user_version)
 
     if helper.check_file_exists(
         os.path.join(f"app", f"{user_distro}_{user_version}.sh")
@@ -429,8 +428,8 @@ def get_distro():
     elif helper.check_file_exists(os.path.join(f"app", f"{user_distro}.sh")):
         file = f"{user_distro}.sh"
     if not file:
-        logger.critical(f"Unable to determine distro: ID:{id} - Version:{version}")
-        logger.debug(f"File is: {file}")
+        logger.critical("Unable to determine distro: ID:%s - Version:%s", id, version)
+        logger.debug("File is: %s", file)
     return file
 
 
@@ -482,9 +481,9 @@ if __name__ == "__main__":
             )
         )
         logger.critical(
-            "Python Version < 3.9: {}.{} was found".format(
-                sys.version_info.major, sys.version_info.minor
-            )
+            "Python Version < 3.9: %i.%i was found",
+            sys.version_info.major,
+            sys.version_info.minor
         )
         time.sleep(1)
         pretty.warning(
@@ -542,12 +541,12 @@ if __name__ == "__main__":
         install_dir = defaults["install_dir"]
 
     pretty.info("Installing Crafty to {}".format(install_dir))
-    logger.info("Installing Crafty to {}".format(install_dir))
+    logger.info("Installing Crafty to %s", install_dir)
 
     # can we write to the dir?
     if not helper.check_writeable(install_dir):
         pretty.warning("Unable to write to {} - Permission denied".format(install_dir))
-        logger.warning("Unable to write to {} - Permission denied".format(install_dir))
+        logger.warning("Unable to write to %s - Permission denied", install_dir)
 
         # unattended
         if not defaults["unattended"]:
@@ -575,11 +574,7 @@ if __name__ == "__main__":
 
             # after changing the ownership, let's see if we can write to it now.
             if not helper.check_writeable(install_dir):
-                logger.critical(
-                    "{} is still unwritable - Unable to fix permissions issue".format(
-                        install_dir
-                    )
-                )
+                logger.critical("%s is still unwritable - Unable to fix permissions issue", install_dir)
                 sys.exit(1)
 
     # is this a fresh install?
@@ -589,10 +584,10 @@ if __name__ == "__main__":
 
     do_header()
 
-    logger.info("Looking for old crafty install in: {}".format(install_dir))
+    logger.info("Looking for old crafty install in: %s", install_dir)
 
     if len(files) > 0:
-        logger.warning("Old Crafty install detected: {}".format(install_dir))
+        logger.warning("Old Crafty install detected: %s", install_dir)
         pretty.warning(
             "Old Crafty Install Detected. Please move all files out of the install"
             + " directory and run this script again."
