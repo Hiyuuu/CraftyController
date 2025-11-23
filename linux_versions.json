@@ -15,8 +15,8 @@
     },
     "debian": {
         "versions": [
-            "11",
-            "12"
+            "12",
+            "13"
         ],
         "support-level": ":material-check-all: Full"
     },
