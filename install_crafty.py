@@ -20,8 +20,12 @@ with open("config.json", "r", encoding="utf-8") as config_file:
     defaults = json.load(config_file)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--debug", help="Enables debugging mode", default=False, action="store_true")
-parser.add_argument("-s", "--ssh", help="Runs git in SSH mode", default=False, action="store_true")
+parser.add_argument(
+    "-d", "--debug", help="Enables debugging mode", default=False, action="store_true"
+)
+parser.add_argument(
+    "-s", "--ssh", help="Runs git in SSH mode", default=False, action="store_true"
+)
 
 logging.basicConfig(
     filename="installer.log",
@@ -117,8 +121,14 @@ def setup_repo(target_directory: pathlib.Path):
     try:
         subprocess.check_output([sys.executable, "-m", "venv", venv_dir], text=True)
     except subprocess.CalledProcessError as e:
-        pretty.critical("Unable to create virtual environment - venv creation failed (see log)")
-        logger.critical("venv subprocess returned abnormally with code %i and output:\n%s", e.returncode, e.output)
+        pretty.critical(
+            "Unable to create virtual environment - venv creation failed (see log)"
+        )
+        logger.critical(
+            "venv subprocess returned abnormally with code %i and output:\n%s",
+            e.returncode,
+            e.output,
+        )
         helper.cleanup_bad_install(target_directory)
         sys.exit(1)
     except Exception as e:
@@ -182,10 +192,21 @@ def clone_repo_ssh(target_directory: pathlib.Path):
     try:
         embed_ssh_command = "ssh -i '{ssh_key_loc}'"
         subprocess.check_output(
-            ["git", "clone", "git@gitlab.com:crafty-controller/crafty-4.git", "--config", f"core.sshCommand=\"{embed_ssh_command}\""], text=True
+            [
+                "git",
+                "clone",
+                "git@gitlab.com:crafty-controller/crafty-4.git",
+                "--config",
+                f'core.sshCommand="{embed_ssh_command}"',
+            ],
+            text=True,
         )
     except subprocess.CalledProcessError as e:
-        logger.critical("git clone returned abnormally with code %i and output:\n%s", e.returncode, e.output)
+        logger.critical(
+            "git clone returned abnormally with code %i and output:\n%s",
+            e.returncode,
+            e.output,
+        )
         logger.critical("Git clone failed! Did you specify the correct key?")
         pretty.critical("Failed to clone. Falling back to HTTPS.")
         clone_repo_https(target_directory)
@@ -197,7 +218,9 @@ def clone_repo_ssh(target_directory: pathlib.Path):
 
 def clone_repo_https(target_directory: pathlib.Path):
     try:
-        subprocess.check_output(["git", "clone", "https://gitlab.com/crafty-controller/crafty-4.git"])
+        subprocess.check_output(
+            ["git", "clone", "https://gitlab.com/crafty-controller/crafty-4.git"]
+        )
     except Exception as e:
         logger.critical("Git clone failed!")
         logger.exception("Error:", exc_info=e)
@@ -208,7 +231,9 @@ def clone_repo_https(target_directory: pathlib.Path):
 
 
 # this switches to the branch chosen and does the pip install and such
-def do_virt_dir_install(starting_directory: pathlib.Path, target_directory: pathlib.Path):
+def do_virt_dir_install(
+    starting_directory: pathlib.Path, target_directory: pathlib.Path
+):
     do_header()
 
     # choose your destiny
@@ -246,9 +271,13 @@ def do_virt_dir_install(starting_directory: pathlib.Path, target_directory: path
 
 
 # installs pip requirements via shell script
-def do_pip_install(branch: str, starting_directory: pathlib.Path, target_directory: pathlib.Path):
+def do_pip_install(
+    branch: str, starting_directory: pathlib.Path, target_directory: pathlib.Path
+):
     os.chmod(pathlib.Path(starting_directory, "app", "pip_install_req.sh"), 0o0775)
-    pip_install_script_src = pathlib.Path(starting_directory, "app", "pip_install_req.sh")
+    pip_install_script_src = pathlib.Path(
+        starting_directory, "app", "pip_install_req.sh"
+    )
     pip_install_script_dst = pathlib.Path(target_directory, "pip_install_req.sh")
 
     logger.info("Copying PIP install script")
@@ -354,7 +383,9 @@ def make_service_script(target_directory: pathlib.Path):
     txt += "source .venv/bin/activate \n"
     txt += "cd crafty-4 \n"
     txt += f"python{sys.version_info.major} main.py -d\n"
-    with open("run_crafty_service.sh", "w", encoding="utf-8") as run_crafty_service_file:
+    with open(
+        "run_crafty_service.sh", "w", encoding="utf-8"
+    ) as run_crafty_service_file:
         run_crafty_service_file.write(txt)
         run_crafty_service_file.close()
 
@@ -393,7 +424,9 @@ WantedBy=multi-user.target
         crafty_service_file.write(txt)
         crafty_service_file.close()
 
-    shutil.copy2(pathlib.Path(target_directory, "crafty.service"), "/etc/systemd/system/")
+    shutil.copy2(
+        pathlib.Path(target_directory, "crafty.service"), "/etc/systemd/system/"
+    )
 
 
 # get distro
@@ -402,9 +435,7 @@ def get_distro():
     version = pydistro.version()
     with open("linux_versions.json", "r", encoding="utf-8") as linux_versions_file:
         linux_versions = json.load(linux_versions_file)
-    sys.stdout.write(
-        f"We detected your os is: {distro_id} - Version: {version}\n"
-    )
+    sys.stdout.write(f"We detected your os is: {distro_id} - Version: {version}\n")
 
     distro_file = None
 
@@ -436,7 +467,9 @@ def get_distro():
     elif helper.check_file_exists(os.path.join("app", f"{current_distro}.sh")):
         distro_file = f"{current_distro}.sh"
     if distro_file is None:
-        logger.critical("Unable to determine distro: ID:%s - Version:%s", distro_id, version)
+        logger.critical(
+            "Unable to determine distro: ID:%s - Version:%s", distro_id, version
+        )
         logger.debug("File is: %s", distro_file)
     return distro_file
 
@@ -478,7 +511,7 @@ if __name__ == "__main__":
         logger.critical(
             "Python Version < 3.9: %i.%i was found",
             sys.version_info.major,
-            sys.version_info.minor
+            sys.version_info.minor,
         )
         time.sleep(1)
         pretty.warning(
@@ -510,19 +543,23 @@ if __name__ == "__main__":
 
     # do we want to install to default dir?
     pretty.info(
-        f"Crafty's Default install directory is set to: {defaults["install_dir"]}"
+        f"Crafty's Default install directory is set to: {defaults['install_dir']}"
     )
 
     # unattended
     if not defaults["unattended"]:
-        install_use_default = helper.get_user_yesno(f"Install Crafty to this directory? {defaults["install_dir"]}")
+        install_use_default = helper.get_user_yesno(
+            f"Install Crafty to this directory? {defaults['install_dir']}"
+        )
     else:
         install_use_default = True
 
     do_header()
 
     if not install_use_default:
-        install_dir = pathlib.Path(helper.get_user_open_input("Where would you like Crafty to install to?")).resolve()
+        install_dir = pathlib.Path(
+            helper.get_user_open_input("Where would you like Crafty to install to?")
+        ).resolve()
     else:
         install_dir = pathlib.Path(defaults["install_dir"]).resolve()
 
@@ -536,22 +573,38 @@ if __name__ == "__main__":
             install_dir.mkdir(parents=True, exist_ok=True, mode=0o755)
             shutil.chown(install_dir, user="crafty", group="crafty")
         except OSError as e:
-            logger.critical("Unable to create install directory %s with error %s", install_dir, e)
-            pretty.critical("Unable to create install directory {install_dir}. Terminating program")
+            logger.critical(
+                "Unable to create install directory %s with error %s", install_dir, e
+            )
+            pretty.critical(
+                "Unable to create install directory {install_dir}. Terminating program"
+            )
             if os.geteuid() != 0:
-                logger.critical("This action likely require root/sudo - elevating this script may solve the above issue")
-                pretty.critical("This action likely require root/sudo - elevating this script may solve the above issue")
+                logger.critical(
+                    "This action likely require root/sudo - elevating this script may solve the above issue"
+                )
+                pretty.critical(
+                    "This action likely require root/sudo - elevating this script may solve the above issue"
+                )
             sys.exit(1)
 
     logger.debug("Checking if installation directory has correct ownership")
     install_dir_stat = install_dir.stat()
-    logger.debug("Installation directory has ownership of %s:%s with mode %s (expected crafty:crafty 0755)", install_dir.owner(), install_dir.group(), oct(install_dir_stat.st_mode))
+    logger.debug(
+        "Installation directory has ownership of %s:%s with mode %s (expected crafty:crafty 0755)",
+        install_dir.owner(),
+        install_dir.group(),
+        oct(install_dir_stat.st_mode),
+    )
     if not (
-        install_dir.owner() == "crafty" and
-        install_dir.group() == "crafty" and
-        (install_dir_stat.st_mode & 0o777) == 0o755):
+        install_dir.owner() == "crafty"
+        and install_dir.group() == "crafty"
+        and (install_dir_stat.st_mode & 0o777) == 0o755
+    ):
         logger.debug("Installation directory did not match ownership/mode check")
-        if helper.get_user_yesno("Installation directory has an unexpected user, group, or mode - should we attempt to fix this?"):
+        if helper.get_user_yesno(
+            "Installation directory has an unexpected user, group, or mode - should we attempt to fix this?"
+        ):
             shutil.chown(install_dir, user="crafty", group="crafty")
             install_dir.chmod(0o755)
 
@@ -587,7 +640,9 @@ if __name__ == "__main__":
     make_update_script(install_dir)
 
     if not defaults["unattended"]:
-        service_answer = helper.get_user_yesno("Would you like to make a service file for Crafty?")
+        service_answer = helper.get_user_yesno(
+            "Would you like to make a service file for Crafty?"
+        )
         if service_answer:
             make_service_script(install_dir)
             make_service_file(install_dir)
@@ -616,10 +671,10 @@ if __name__ == "__main__":
     )
     pretty.info(f"Your install is located here: {install_dir}")
     pretty.info(
-        f"You can run crafty by running {os.path.join(install_dir, "run_crafty.sh")}"
+        f"You can run crafty by running {os.path.join(install_dir, 'run_crafty.sh')}"
     )
     pretty.info(
-        f"You can update crafty by running {os.path.join(install_dir, "update_crafty.sh")}"
+        f"You can update crafty by running {os.path.join(install_dir, 'update_crafty.sh')}"
     )
     if service_answer:
         pretty.info(
