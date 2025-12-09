@@ -23,7 +23,8 @@
     "fedora": {
         "versions": [
             "39",
-            "40"
+            "40",
+            "41"
         ],
         "support-level": ":material-check-all: Full"
     },
