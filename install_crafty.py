@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import os
+import textwrap
 import pathlib
 import platform
 import shutil
@@ -336,40 +337,41 @@ def make_update_script(target_directory: pathlib.Path):
     os.chdir(target_directory)
     logger.info("Changing to %s", os.path.abspath(os.curdir))
 
-    txt = fr"""#!/bin/bash
-    cd {target_directory}
-    source .venv/bin/activate 
-    cd crafty-4 
+    txt = f"""\
+        #!/bin/bash
+        cd {target_directory}
+        source .venv/bin/activate 
+        cd crafty-4 
 
-    if [[ -n "$1" ]]; then
-        yn="$1"
-    fi
-
-    while true; do
-        if [[ -z "$yn" ]]; then
-            read -p 'Can we overwrite any local codebase changes? (Y/N) ' yn
+        if [[ -n "$1" ]]; then
+            yn="$1"
         fi
-        
-        case "$yn" in
-            [yY]* | -y )
-                git reset --hard origin/master
-                break ;;
-            [nN]* | -n )
-                break ;;
-            * )
-                unset yn
-                echo 'Please use Y or N to reply.' ;;
-        esac
-    done
 
-    git pull 
-    python3 -m ensurepip --upgrade 
-    pip3 install --upgrade pip --no-cache-dir
-    pip3 install -r requirements.txt --no-cache-dir
-    """
+        while true; do
+            if [[ -z "$yn" ]]; then
+                read -p 'Can we overwrite any local codebase changes? (Y/N) ' yn
+            fi
+            
+            case "$yn" in
+                [yY]* | -y )
+                    git reset --hard origin/master
+                    break ;;
+                [nN]* | -n )
+                    break ;;
+                * )
+                    unset yn
+                    echo 'Please use Y or N to reply.' ;;
+            esac
+        done
+
+        git pull 
+        python3 -m ensurepip --upgrade 
+        pip3 install --upgrade pip --no-cache-dir
+        pip3 install -r requirements.txt --no-cache-dir
+        """
 
     with open("update_crafty.sh", "w", encoding="utf-8") as f:
-        f.write(txt)
+        f.write(textwrap.dedent(txt))
 
     helper.chmod_add_exec(pathlib.Path("update_crafty.sh"))
 
