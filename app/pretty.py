@@ -11,13 +11,13 @@ class bcolors:
 
 class pretty_print:
     def info(self, message):
-        print(f"[+] Info:{bcolors.OKGREEN}- {message}{bcolors.ENDC}")
+        print(f"[+] 情報: {bcolors.OKGREEN}- {message}{bcolors.ENDC}")
 
     def warning(self, message):
-        print(f"{bcolors.WARNING}[-] Warning: {message}{bcolors.ENDC}")
+        print(f"{bcolors.WARNING}[-] 警告: {message}{bcolors.ENDC}")
 
     def critical(self, message):
-        print(f"{bcolors.FAIL}[-] Critical: {message}{bcolors.ENDC}")
+        print(f"{bcolors.FAIL}[-] 致命的: {message}{bcolors.ENDC}")
 
     def header(self, message):
         print(f"{bcolors.HEADER}{message}{bcolors.ENDC}")

@@ -1,8 +1,10 @@
 import logging
 import os
 import pathlib
+import select
 import shutil
 import subprocess
+import sys
 import time
 from typing import Union
 
@@ -33,16 +35,39 @@ class helper_obj:
         out, err = process.communicate()
         return out, err
 
-    def get_user_valid_input(self, q: str, valid_answers: list[str]) -> str:
+    def _get_input_timeout(self, prompt: str, timeout: int, default: str) -> str:
+        sys.stdout.write(f"{prompt} (30秒で自動的に '{default}' が選択されます): ")
+        sys.stdout.flush()
+        
+        # Windows では select.select はソケットに対してのみ動作するため、
+        # Linux 環境であることを前提とした実装です（install_crafty.py でチェック済み）。
+        ready, _, _ = select.select([sys.stdin], [], [], timeout)
+        if ready:
+            return sys.stdin.readline().rstrip('\n')
+        else:
+            print(f"\nタイムアウトしました。デフォルト値 '{default}' を使用します。")
+            return default
+
+    def get_user_valid_input(self, q: str, valid_answers: list[str], timeout: int = None, default: str = None) -> str:
         while True:
-            n = input(
-                f"\n{bcolors.BOLD}{q} - {valid_answers}{bcolors.ENDC}: "
-            ).lower()
+            prompt = f"\n{bcolors.BOLD}{q} - {valid_answers}{bcolors.ENDC}"
+            if timeout is not None and default is not None:
+                n = self._get_input_timeout(prompt, timeout, default).lower()
+            else:
+                n = input(f"{prompt}: ").lower()
+                
             if n in valid_answers:
                 return n
+            
+            if timeout is not None:
+                # タイムアウトが有効な場合、無効な入力でもデフォルト値を返すようにするか、
+                # またはループを抜ける必要があります。ここではデフォルト値を優先します。
+                print(f"無効な入力です。デフォルトの '{default}' を使用します。")
+                return default
 
-    def get_user_yesno(self, q: str) -> Union[bool|None]:
-        response = self.get_user_valid_input(q, ["y", "n"])
+    def get_user_yesno(self, q: str, timeout: int = None, default: bool = True) -> Union[bool|None]:
+        default_str = "y" if default else "n"
+        response = self.get_user_valid_input(q, ["y", "n"], timeout, default_str)
         if response == "y":
             return True
         elif response == "n":
@@ -50,8 +75,12 @@ class helper_obj:
         else:
             return None
 
-    def get_user_open_input(self, q: str) -> str:
-        n = input(f"\n{bcolors.BOLD}{q}{bcolors.ENDC}: ")
+    def get_user_open_input(self, q: str, timeout: int = None, default: str = None) -> str:
+        prompt = f"\n{bcolors.BOLD}{q}{bcolors.ENDC}"
+        if timeout is not None and default is not None:
+            return self._get_input_timeout(prompt, timeout, default)
+        
+        n = input(f"{prompt}: ")
         return n
 
     def ensure_dir_exists(self, path):
@@ -63,16 +92,16 @@ class helper_obj:
             filepath.touch()
             filepath.unlink()
 
-            logging.info("%s is writable", filepath)
+            logging.info("%s は書き込み可能です", filepath)
             return True
 
         except Exception as e:
-            logging.exception("Unable to write to %s - Error:", check_path, exc_info=e)
+            logging.exception("%s に書き込むことができません - エラー:", check_path, exc_info=e)
             return False
 
     def check_file_exists(self, check_path):
         if os.path.exists(check_path) and os.path.isfile(check_path):
-            logging.debug("Found path: %s", check_path)
+            logging.debug("パスが見つかりました: %s", check_path)
             return True
         else:
             return False
