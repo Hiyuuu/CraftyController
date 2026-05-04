@@ -94,8 +94,9 @@ def do_distro_install(target_distro):
             if not line:
                 break
             sys.stdout.write(line.decode("utf-8"))
-        rc = p.poll()
+        rc = p.wait()
         if rc != 0:
+
             raise RuntimeError(f"スクリプトがコード {rc} で終了しました")
 
     except Exception as e:
@@ -332,8 +333,9 @@ def do_pip_install(
             if not line:
                 break
             sys.stdout.write(line.decode("utf-8"))
-        rc = p.poll()
+        rc = p.wait()
         if rc != 0:
+
             raise RuntimeError(f"異常な終了コード {rc}")
 
     except Exception as e:
@@ -376,10 +378,11 @@ def make_update_script(target_directory: pathlib.Path):
     txt += "\n"
     txt += "while true; do\n"
     txt += "    if [[ ! -v yn ]]; then\n"
-    txt += "        read -p 'ローカルの変更をすべて上書きしてもよろしいですか？ (Y/N)' yn\n"
+    txt += "        read -t 30 -p 'ローカルの変更をすべて上書きしてもよろしいですか？ (30秒で自動的に Y) [Y/N]: ' yn\n"
+    txt += "        if [ $? -gt 128 ]; then yn='y'; echo 'y'; fi\n"
     txt += "    fi\n"
     txt += "    \n"
-    txt += "    case $yn in\n"
+    txt += "    case ${yn:-y} in\n"
     txt += "        [yY] | -y )\n"
     txt += "            git reset --hard origin/master\n"
     txt += "            break;;\n"
